@@ -1,0 +1,6 @@
+{
+  "name": "CRIMSON APEX — PLAYER GATEWAY",
+  "description": "Rise Above. Rule the Arena. Official Free Fire Battle Royale tournament entry gateway, registration pass generator, and secure organizer management dashboard.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
