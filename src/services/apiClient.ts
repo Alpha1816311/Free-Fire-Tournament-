@@ -573,6 +573,10 @@ export const apiClient = {
       const res = await safeFetchJson<RegistrationRecord[]>(`/api/admin/registrations?${q.toString()}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      if (res.status === 401) {
+        localStorage.removeItem(STORAGE_KEYS.ADMIN_TOKEN);
+        throw new Error('Administrator session expired or invalid. Please re-authenticate.');
+      }
       if (res.ok && Array.isArray(res.data)) {
         saveStoredRegistrations(res.data);
         return res.data;
@@ -622,6 +626,10 @@ export const apiClient = {
       const res = await safeFetchJson<AdminOverviewStats>('/api/admin/stats', {
         headers: { Authorization: `Bearer ${token}` },
       });
+      if (res.status === 401) {
+        localStorage.removeItem(STORAGE_KEYS.ADMIN_TOKEN);
+        throw new Error('Administrator session expired or invalid. Please re-authenticate.');
+      }
       if (res.ok && res.data) {
         return res.data;
       }

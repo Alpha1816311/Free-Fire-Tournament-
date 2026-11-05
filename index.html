@@ -2,6 +2,28 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      // Guard window.fetch against browser extensions/interceptors that attempt
+      // direct property assignment when window.fetch only has a getter
+      (function() {
+        try {
+          var _origFetch = typeof window.fetch === 'function' ? window.fetch.bind(window) : undefined;
+          var _currentFetch = _origFetch;
+          Object.defineProperty(window, 'fetch', {
+            configurable: true,
+            enumerable: true,
+            get: function() {
+              return _currentFetch;
+            },
+            set: function(fn) {
+              _currentFetch = fn;
+            }
+          });
+        } catch (e) {
+          // fallback gracefully if property cannot be redefined
+        }
+      })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>CRIMSON APEX — PLAYER GATEWAY</title>
     <meta name="description" content="Rise Above. Rule the Arena. Official Free Fire Battle Royale tournament entry gateway, registration pass generator, and secure organizer management dashboard." />

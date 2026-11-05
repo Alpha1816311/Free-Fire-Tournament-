@@ -219,8 +219,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
       setRegistrations(regList);
       setTournamentSettings(tSettings);
       setAuditLogs(logs);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to load admin data:', err);
+      if (err?.message?.includes('expired') || err?.message?.includes('session') || err?.message?.includes('re-authenticate')) {
+        localStorage.removeItem('apex_admin_token');
+        setToken(null);
+        setAdminUsername(null);
+        setAuthError('Your organizer session expired. Please log in to connect to the database.');
+      }
     } finally {
       setLoadingData(false);
     }
