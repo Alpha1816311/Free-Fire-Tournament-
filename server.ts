@@ -14,6 +14,7 @@ import {
   hasAdminUsers,
   createAdminUser,
   verifyAdminCredentials,
+  updateAdminCredentials,
   getAdminAuditLogs,
   logAdminAudit,
 } from './server/db';
@@ -277,6 +278,31 @@ app.put('/api/admin/tournament', requireAdmin, (req: Request, res: Response) => 
     res.json({ success: true, data: updated });
   } catch (err: any) {
     res.status(400).json({ error: err.message || 'Failed to update tournament settings' });
+  }
+});
+
+// Update admin credentials (Username & Password)
+app.post('/api/admin/change-credentials', requireAdmin, (req: Request, res: Response) => {
+  try {
+    const currentAdminUser = (req as any).adminUser;
+    const { currentPassword, newUsername, newPassword } = req.body;
+
+    if (!currentPassword || !newUsername || !newPassword) {
+      res.status(400).json({ error: 'Current password, new username, and new password are required.' });
+      return;
+    }
+
+    const result = updateAdminCredentials(currentAdminUser, currentPassword, newUsername, newPassword);
+    const newToken = signToken(result.username);
+
+    res.json({
+      success: true,
+      message: 'Admin credentials updated successfully.',
+      username: result.username,
+      token: newToken,
+    });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to update credentials.' });
   }
 });
 

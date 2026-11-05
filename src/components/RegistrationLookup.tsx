@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { RegistrationPass } from './RegistrationPass';
 import { Search, AlertCircle, ArrowLeft, ShieldCheck } from 'lucide-react';
+import { apiClient } from '../services/apiClient';
 
 interface RegistrationLookupProps {
   onBack: () => void;
@@ -22,13 +23,7 @@ export const RegistrationLookup: React.FC<RegistrationLookupProps> = ({ onBack }
     setResult(null);
 
     try {
-      const res = await fetch(`/api/registration/${encodeURIComponent(trimmed)}`);
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to lookup registration.');
-      }
-
+      const data = await apiClient.lookupRegistration(trimmed);
       setResult(data);
     } catch (err: any) {
       setError(err.message || 'Lookup failed. Please verify your registration code.');

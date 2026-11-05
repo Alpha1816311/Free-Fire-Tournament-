@@ -24,10 +24,13 @@ import {
   RefreshCw,
   AlertTriangle,
   Lock,
+  Key,
   UserCheck,
   Eye,
   History,
 } from 'lucide-react';
+
+import { apiClient } from '../services/apiClient';
 
 interface AdminDashboardProps {
   onClose: () => void;
@@ -49,8 +52,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
   const [loginPassword, setLoginPassword] = useState('');
 
   // Dashboard state
-  const [activeTab, setActiveTab] = useState<'registrations' | 'prizes' | 'settings' | 'audit'>('registrations');
+  const [activeTab, setActiveTab] = useState<'registrations' | 'prizes' | 'settings' | 'security' | 'audit'>('registrations');
   const [stats, setStats] = useState<AdminOverviewStats | null>(null);
+
+  // Security & Credentials Form State
+  const [currPass, setCurrPass] = useState('');
+  const [newUsernameInput, setNewUsernameInput] = useState('');
+  const [newPass, setNewPass] = useState('');
+  const [confirmNewPass, setConfirmNewPass] = useState('');
+  const [credSuccessMsg, setCredSuccessMsg] = useState<string | null>(null);
+  const [credErrorMsg, setCredErrorMsg] = useState<string | null>(null);
+  const [credSubmitting, setCredSubmitting] = useState<boolean>(false);
   const [registrations, setRegistrations] = useState<RegistrationRecord[]>([]);
   const [tournamentSettings, setTournamentSettings] = useState<TournamentSettings | null>(null);
   const [auditLogs, setAuditLogs] = useState<AdminAuditLog[]>([]);
@@ -79,19 +91,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
     setAuthLoading(true);
     setAuthError(null);
     try {
-      const res = await fetch('/api/admin/auth-status', {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      const data = await res.json();
-      setNeedsSetup(data.needsSetup);
-      if (data.isAuthenticated) {
-        setAdminUsername(data.username);
+      const status = await apiClient.checkAdminAuth(token);
+      setNeedsSetup(status.needsSetup);
+      if (status.isAuthenticated) {
+        setAdminUsername(status.username || 'admin');
         loadDashboardData(token);
       } else {
         setAdminUsername(null);
       }
-    } catch (err: any) {
-      setAuthError('Failed to communicate with authentication service');
+    } catch {
+      setAdminUsername(null);
     } finally {
       setAuthLoading(false);
     }
@@ -110,17 +119,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
     }
 
     try {
-      const res = await fetch('/api/admin/setup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: setupUsername.trim(),
-          password: setupPassword,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Setup failed');
-
+      const data = await apiClient.setupAdmin(setupUsername.trim(), setupPassword);
       localStorage.setItem('apex_admin_token', data.token);
       setToken(data.token);
       setAdminUsername(data.username);
@@ -135,23 +134,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
     e.preventDefault();
     setAuthError(null);
     try {
-      const res = await fetch('/api/admin/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: loginUsername.trim(),
-          password: loginPassword,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Invalid credentials');
-
+      const data = await apiClient.loginAdmin(loginUsername.trim(), loginPassword);
       localStorage.setItem('apex_admin_token', data.token);
       setToken(data.token);
       setAdminUsername(data.username);
       loadDashboardData(data.token);
     } catch (err: any) {
-      setAuthError(err.message || 'Login failed');
+      setAuthError(err.message || 'Login failed. Please check your credentials.');
     }
   };
 
@@ -161,25 +150,75 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
     setAdminUsername(null);
   };
 
+  const handleChangeCredentials = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCredErrorMsg(null);
+    setCredSuccessMsg(null);
+
+    const targetUser = (newUsernameInput.trim() || adminUsername || 'admin').trim();
+    if (targetUser.length < 3) {
+      setCredErrorMsg('Username must be at least 3 characters.');
+      return;
+    }
+
+    if (!currPass) {
+      setCredErrorMsg('Please enter your current password to authorize this update.');
+      return;
+    }
+
+    if (!newPass || newPass.length < 6) {
+      setCredErrorMsg('New password must be at least 6 characters.');
+      return;
+    }
+
+    if (newPass !== confirmNewPass) {
+      setCredErrorMsg('New password and confirmation do not match.');
+      return;
+    }
+
+    setCredSubmitting(true);
+    try {
+      const res = await apiClient.changeAdminCredentials(currPass, targetUser, newPass, token);
+      setAdminUsername(res.username);
+      if (res.token) {
+        setToken(res.token);
+      }
+      setCredSuccessMsg(`Organizer credentials updated successfully! New username is "${res.username}". Keep your credentials confidential.`);
+      setCurrPass('');
+      setNewPass('');
+      setConfirmNewPass('');
+      setNewUsernameInput('');
+      loadDashboardData(res.token || token);
+    } catch (err: any) {
+      setCredErrorMsg(err.message || 'Failed to update credentials. Please check your current password.');
+    } finally {
+      setCredSubmitting(false);
+    }
+  };
+
   const loadDashboardData = async (activeAuthToken = token) => {
     if (!activeAuthToken) return;
     setLoadingData(true);
     try {
-      const headers = { Authorization: `Bearer ${activeAuthToken}` };
-      const [statsRes, regsRes, tourneyRes, auditRes] = await Promise.all([
-        fetch('/api/admin/stats', { headers }),
-        fetch(
-          `/api/admin/registrations?search=${encodeURIComponent(searchTerm)}&gameMode=${modeFilter}&status=${statusFilter}&paymentStatus=${paymentFilter}`,
-          { headers }
+      const [st, regList, tSettings, logs] = await Promise.all([
+        apiClient.getAdminStats(activeAuthToken),
+        apiClient.getAdminRegistrations(
+          {
+            search: searchTerm,
+            gameMode: modeFilter,
+            status: statusFilter,
+            paymentStatus: paymentFilter,
+          },
+          activeAuthToken
         ),
-        fetch('/api/tournament'),
-        fetch('/api/admin/audit-logs', { headers }),
+        apiClient.getTournament(),
+        apiClient.getAdminAuditLogs(activeAuthToken),
       ]);
 
-      if (statsRes.ok) setStats(await statsRes.json());
-      if (regsRes.ok) setRegistrations(await regsRes.json());
-      if (tourneyRes.ok) setTournamentSettings(await tourneyRes.json());
-      if (auditRes.ok) setAuditLogs(await auditRes.json());
+      setStats(st);
+      setRegistrations(regList);
+      setTournamentSettings(tSettings);
+      setAuditLogs(logs);
     } catch (err) {
       console.error('Failed to load admin data:', err);
     } finally {
@@ -194,22 +233,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
     reason?: string
   ) => {
     try {
-      const res = await fetch(`/api/admin/registrations/${id}/status`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          status,
-          paymentStatus,
-          rejectionReason: reason,
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Update failed');
-
+      await apiClient.updateRegistrationStatus(id, status, paymentStatus, reason, token);
       setActionSuccessMsg(`Registration #${id} updated: ${status} / ${paymentStatus}`);
       setTimeout(() => setActionSuccessMsg(null), 3000);
       setRejectionModalOpen(false);
@@ -226,21 +250,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
     if (!tournamentSettings) return;
 
     try {
-      const res = await fetch('/api/admin/tournament', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(tournamentSettings),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to save settings');
-
+      const res = await apiClient.updateTournamentSettings(tournamentSettings, token);
       setActionSuccessMsg('Tournament configuration saved successfully.');
       setTimeout(() => setActionSuccessMsg(null), 3000);
-      setTournamentSettings(data.data);
+      setTournamentSettings(res.data);
       loadDashboardData();
     } catch (err: any) {
       alert(err.message || 'Error updating settings');
@@ -249,11 +262,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
 
   const handleExportCsv = async () => {
     try {
-      const res = await fetch('/api/admin/export', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error('Export failed');
-      const blob = await res.blob();
+      const blob = await apiClient.exportCsv(token);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -379,7 +388,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
             <input
               type="text"
               required
-              placeholder="e.g. admin"
+              autoComplete="username"
+              placeholder="Enter username"
               value={loginUsername}
               onChange={(e) => setLoginUsername(e.target.value)}
               className="w-full px-3 py-2 bg-slate-950 border border-slate-800 text-white text-xs font-mono focus:border-rose-500"
@@ -393,6 +403,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
             <input
               type="password"
               required
+              autoComplete="current-password"
               placeholder="••••••••"
               value={loginPassword}
               onChange={(e) => setLoginPassword(e.target.value)}
@@ -559,6 +570,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
           }`}
         >
           Tournament Configuration
+        </button>
+        <button
+          onClick={() => setActiveTab('security')}
+          className={`px-4 py-2 border-b-2 font-bold uppercase transition-colors ${
+            activeTab === 'security'
+              ? 'border-rose-500 text-rose-400 bg-rose-950/10'
+              : 'border-transparent text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          Security & Credentials
         </button>
         <button
           onClick={() => setActiveTab('audit')}
@@ -1077,6 +1098,131 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
             SAVE TOURNAMENT SETTINGS
           </button>
         </form>
+      )}
+
+      {/* ==================================================== */}
+      {/* TAB: SECURITY & CREDENTIALS MANAGEMENT */}
+      {/* ==================================================== */}
+      {activeTab === 'security' && (
+        <div className="max-w-2xl mx-auto space-y-6">
+          <div className="bg-black/80 border border-slate-800 p-6 sm:p-8 apex-chamfer">
+            <div className="flex items-center gap-3 pb-4 border-b border-slate-800">
+              <div className="w-10 h-10 bg-rose-950/60 border border-rose-600/40 flex items-center justify-center apex-chamfer">
+                <Key className="w-5 h-5 text-rose-500" />
+              </div>
+              <div>
+                <h3 className="text-xl font-display font-black text-white uppercase tracking-tight">
+                  ORGANIZER ACCESS & CREDENTIALS
+                </h3>
+                <p className="text-xs text-slate-400 font-mono mt-0.5">
+                  Update username and password for the Crimson Apex operations console.
+                </p>
+              </div>
+            </div>
+
+            <div className="my-5 p-3.5 bg-slate-950 border border-slate-800 text-xs font-mono text-slate-300 space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">Current Logged-in Account:</span>
+                <span className="text-rose-400 font-bold px-2 py-0.5 bg-rose-950/50 border border-rose-900/40">
+                  {adminUsername}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 pt-1">
+                Notice: Passwords and default credentials are kept private and never exposed on the public login page. Only authorized personnel who know the set credentials can log in.
+              </p>
+            </div>
+
+            {credSuccessMsg && (
+              <div className="mb-4 p-3 bg-emerald-950/90 border border-emerald-600 text-emerald-200 text-xs font-mono flex items-start gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <span>{credSuccessMsg}</span>
+              </div>
+            )}
+
+            {credErrorMsg && (
+              <div className="mb-4 p-3 bg-rose-950 border border-rose-600 text-rose-200 text-xs font-mono flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                <span>{credErrorMsg}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleChangeCredentials} className="space-y-4">
+              <div>
+                <label className="block text-xs font-mono text-slate-300 uppercase mb-1">
+                  New Organizer Username
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder={adminUsername || 'admin'}
+                  value={newUsernameInput}
+                  onChange={(e) => setNewUsernameInput(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 text-white text-xs font-mono focus:border-rose-500"
+                />
+                <span className="text-[10px] text-slate-500 font-mono">
+                  Enter new username or keep your current one.
+                </span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-mono text-slate-300 uppercase mb-1">
+                  Current Password <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="password"
+                  required
+                  placeholder="Enter current password"
+                  value={currPass}
+                  onChange={(e) => setCurrPass(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 text-white text-xs font-mono focus:border-rose-500"
+                />
+                <span className="text-[10px] text-slate-500 font-mono">
+                  Required to verify your authorization before saving changes.
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-mono text-slate-300 uppercase mb-1">
+                    New Password <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    placeholder="Min 6 characters"
+                    value={newPass}
+                    onChange={(e) => setNewPass(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 text-white text-xs font-mono focus:border-rose-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-mono text-slate-300 uppercase mb-1">
+                    Confirm New Password <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    placeholder="Confirm new password"
+                    value={confirmNewPass}
+                    onChange={(e) => setConfirmNewPass(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 text-white text-xs font-mono focus:border-rose-500"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={credSubmitting}
+                  className="w-full py-2.5 bg-rose-600 hover:bg-rose-500 disabled:bg-slate-800 text-white font-display font-bold uppercase tracking-wider text-sm apex-chamfer transition-colors"
+                >
+                  {credSubmitting ? 'UPDATING CREDENTIALS...' : 'SAVE NEW CREDENTIALS'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
 
       {/* ==================================================== */}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { GameMode, RegistrationInput, PlayerRecord, TournamentSettings } from '../types';
 import { validateRegistrationData, isValidPhone, isValidFreeFireUid, calculateFee } from '../utils/validation';
+import { apiClient } from '../services/apiClient';
 import confetti from 'canvas-confetti';
 import {
   User,
@@ -208,17 +209,7 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('/api/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      const json = await response.json();
-
-      if (!response.ok || !json.success) {
-        throw new Error(json.error || 'Server rejected registration request.');
-      }
+      const registeredRecord = await apiClient.register(payload);
 
       // Fire celebratory confetti on verified success!
       try {
@@ -233,7 +224,7 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
       }
 
       // Pass success data to parent component
-      onSuccess(json.data);
+      onSuccess(registeredRecord);
     } catch (err: any) {
       console.error('Registration failed:', err);
       setSubmitError(err.message || 'Registration failed. Please check your data and retry.');

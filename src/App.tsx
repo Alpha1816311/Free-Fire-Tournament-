@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { GameMode, TournamentSettings } from './types';
+import { apiClient } from './services/apiClient';
 import { Navbar } from './components/Navbar';
 import { HeroSection } from './components/HeroSection';
 import { ModesSection } from './components/ModesSection';
@@ -49,11 +50,8 @@ export default function App() {
   const fetchTournamentData = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/tournament');
-      if (res.ok) {
-        const data = await res.json();
-        setTournament(data);
-      }
+      const data = await apiClient.getTournament();
+      setTournament(data);
     } catch (err) {
       console.error('Failed to load tournament data:', err);
     } finally {
@@ -65,13 +63,8 @@ export default function App() {
     const token = localStorage.getItem('apex_admin_token');
     if (!token) return;
     try {
-      const res = await fetch('/api/admin/auth-status', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setIsAdminAuth(Boolean(data.isAuthenticated));
-      }
+      const status = await apiClient.checkAdminAuth(token);
+      setIsAdminAuth(status.isAuthenticated);
     } catch {
       setIsAdminAuth(false);
     }

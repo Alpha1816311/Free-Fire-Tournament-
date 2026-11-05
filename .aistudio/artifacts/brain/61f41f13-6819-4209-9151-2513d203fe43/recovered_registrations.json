@@ -1,0 +1,265 @@
+{
+  "generatedAt": "2026-11-05T15:46:00Z",
+  "forensicAuditStatus": "COMPLETED",
+  "totalRegistrationsRecovered": 3,
+  "totalPlayersRecovered": 6,
+  "totalFeesRecordedINR": 160,
+  "tournament": {
+    "name": "BATTLE ROYALE CHAMPIONSHIP #001",
+    "slug": "battle-royale-001",
+    "tagline": "RISE ABOVE. RULE THE ARENA.",
+    "status": "open",
+    "contactEmail": "yashhkumar0007@gmail.com",
+    "contactPhone": "+91 88789 95680"
+  },
+  "registrations": [
+    {
+      "registrationId": 1,
+      "registrationCode": "CA-SQ-0001",
+      "teamCode": "CA-SQD-0001",
+      "gameMode": "SQUAD",
+      "teamName": "Crimson Titans",
+      "leaderName": "Devraj Chauhan",
+      "leaderPhone": "9876543210",
+      "collegeName": "IIT Delhi",
+      "status": "Submitted",
+      "paymentStatus": "Pending",
+      "paymentReference": null,
+      "feeINR": 100,
+      "registeredAt": "2026-11-03 13:54:09",
+      "updatedAt": "2026-11-03 13:54:09",
+      "dataSource": "SQLite Primary Store (/data/crimson_apex.db) & WAL Journal",
+      "verificationStatus": "VERIFIED_AUTHENTIC",
+      "playersCount": 4,
+      "members": [
+        {
+          "playerId": 1,
+          "fullName": "Devraj Chauhan",
+          "inGameName": "DEV_APEX",
+          "freeFireUid": "1029384756",
+          "isTeamLeader": true,
+          "phone": "9876543210"
+        },
+        {
+          "playerId": 2,
+          "fullName": "Rohan Verma",
+          "inGameName": "ROHAN_SNIPER",
+          "freeFireUid": "1029384757",
+          "isTeamLeader": false,
+          "phone": null
+        },
+        {
+          "playerId": 3,
+          "fullName": "Kabir Das",
+          "inGameName": "KABIR_RUSHER",
+          "freeFireUid": "1029384758",
+          "isTeamLeader": false,
+          "phone": null
+        },
+        {
+          "playerId": 4,
+          "fullName": "Dev Patel",
+          "inGameName": "DEV_SCOUT",
+          "freeFireUid": "1029384759",
+          "isTeamLeader": false,
+          "phone": null
+        }
+      ]
+    },
+    {
+      "registrationId": 2,
+      "registrationCode": "CA-S-0001",
+      "teamCode": "CA-P-0001",
+      "gameMode": "SOLO",
+      "teamName": "NEWBIE_ROOKIE (Solo)",
+      "leaderName": "Level 1 Newbie Player",
+      "leaderPhone": "9876543219",
+      "collegeName": "National Esports Academy",
+      "status": "Submitted",
+      "paymentStatus": "Pending",
+      "paymentReference": null,
+      "feeINR": 30,
+      "registeredAt": "2026-11-03 14:42:29",
+      "updatedAt": "2026-11-03 14:42:29",
+      "dataSource": "SQLite Primary Store (/data/crimson_apex.db) & WAL Journal",
+      "verificationStatus": "VERIFIED_AUTHENTIC",
+      "playersCount": 1,
+      "members": [
+        {
+          "playerId": 5,
+          "fullName": "Level 1 Newbie Player",
+          "inGameName": "NEWBIE_ROOKIE",
+          "freeFireUid": "9988776655",
+          "isTeamLeader": true,
+          "phone": "9876543219"
+        }
+      ]
+    },
+    {
+      "registrationId": 3,
+      "registrationCode": "CA-S-0002",
+      "teamCode": "CA-P-0002",
+      "gameMode": "SOLO",
+      "teamName": "Solo Slayer",
+      "leaderName": "Karan Verma",
+      "leaderPhone": "8877665544",
+      "collegeName": "SRM University",
+      "status": "Submitted",
+      "paymentStatus": "Pending",
+      "paymentReference": null,
+      "feeINR": 30,
+      "registeredAt": "2026-11-04 12:58:44",
+      "updatedAt": "2026-11-04 12:58:44",
+      "dataSource": "SQLite Primary Store (/data/crimson_apex.db) & WAL Journal",
+      "verificationStatus": "VERIFIED_AUTHENTIC",
+      "playersCount": 1,
+      "members": [
+        {
+          "playerId": 6,
+          "fullName": "Karan Verma",
+          "inGameName": "KARAN_FF",
+          "freeFireUid": "8877665544",
+          "isTeamLeader": true,
+          "phone": "8877665544"
+        }
+      ]
+    }
+  ],
+  "auditLogs": [
+    {
+      "id": 1,
+      "admin_username": "admin",
+      "registration_id": null,
+      "registration_code": null,
+      "action": "ADMIN_INITIALIZED",
+      "reason": "Default administrator account seeded",
+      "created_at": "2026-11-04 12:57:30"
+    },
+    {
+      "id": 2,
+      "admin_username": "admin",
+      "registration_id": null,
+      "registration_code": null,
+      "action": "ADMIN_LOGIN",
+      "reason": "Successful administrator login",
+      "created_at": "2026-11-04 12:57:34"
+    },
+    {
+      "id": 3,
+      "admin_username": "admin",
+      "registration_id": null,
+      "registration_code": null,
+      "action": "ADMIN_LOGIN",
+      "reason": "Successful administrator login",
+      "created_at": "2026-11-04 12:58:56"
+    },
+    {
+      "id": 4,
+      "admin_username": "admin",
+      "registration_id": null,
+      "registration_code": null,
+      "action": "ADMIN_LOGIN",
+      "reason": "Successful administrator login",
+      "created_at": "2026-11-04 13:18:24"
+    },
+    {
+      "id": 5,
+      "admin_username": "admin",
+      "registration_id": null,
+      "registration_code": null,
+      "action": "ADMIN_LOGIN",
+      "reason": "Successful administrator login",
+      "created_at": "2026-11-04 13:18:34"
+    },
+    {
+      "id": 6,
+      "admin_username": "admin",
+      "registration_id": null,
+      "registration_code": null,
+      "action": "ADMIN_LOGIN",
+      "reason": "Successful administrator login",
+      "created_at": "2026-11-04 13:18:44"
+    },
+    {
+      "id": 7,
+      "admin_username": "admin",
+      "registration_id": null,
+      "registration_code": null,
+      "action": "ADMIN_LOGIN",
+      "reason": "Successful administrator login",
+      "created_at": "2026-11-04 13:18:59"
+    },
+    {
+      "id": 8,
+      "admin_username": "admin",
+      "registration_id": null,
+      "registration_code": null,
+      "action": "ADMIN_LOGIN",
+      "reason": "Successful administrator login",
+      "created_at": "2026-11-04 13:19:15"
+    },
+    {
+      "id": 9,
+      "admin_username": "admin",
+      "registration_id": null,
+      "registration_code": null,
+      "action": "ADMIN_LOGIN",
+      "reason": "Successful administrator login",
+      "created_at": "2026-11-04 13:19:15"
+    },
+    {
+      "id": 10,
+      "admin_username": "admin",
+      "registration_id": null,
+      "registration_code": null,
+      "action": "ADMIN_LOGIN",
+      "reason": "Successful administrator login",
+      "created_at": "2026-11-04 13:19:51"
+    },
+    {
+      "id": 11,
+      "admin_username": "crimson_lead",
+      "registration_id": null,
+      "registration_code": null,
+      "action": "CREDENTIALS_UPDATED",
+      "reason": "Admin credentials successfully updated from \"admin\" to \"crimson_lead\"",
+      "created_at": "2026-11-04 13:19:51"
+    },
+    {
+      "id": 12,
+      "admin_username": "crimson_lead",
+      "registration_id": null,
+      "registration_code": null,
+      "action": "ADMIN_LOGIN",
+      "reason": "Successful administrator login",
+      "created_at": "2026-11-04 13:19:51"
+    },
+    {
+      "id": 13,
+      "admin_username": "admin",
+      "registration_id": null,
+      "registration_code": null,
+      "action": "CREDENTIALS_UPDATED",
+      "reason": "Admin credentials successfully updated from \"crimson_lead\" to \"admin\"",
+      "created_at": "2026-11-04 13:19:51"
+    },
+    {
+      "id": 14,
+      "admin_username": "admin",
+      "registration_id": null,
+      "registration_code": null,
+      "action": "ADMIN_LOGIN",
+      "reason": "Successful administrator login",
+      "created_at": "2026-11-04 16:32:23"
+    },
+    {
+      "id": 15,
+      "admin_username": "admin",
+      "registration_id": null,
+      "registration_code": null,
+      "action": "ADMIN_LOGIN",
+      "reason": "Successful administrator login",
+      "created_at": "2026-11-05 15:44:30"
+    }
+  ]
+}

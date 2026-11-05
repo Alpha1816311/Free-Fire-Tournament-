@@ -155,6 +155,18 @@ export function initDatabase() {
       db.prepare('INSERT INTO sequences (mode, current_val) VALUES (?, 0)').run(mode);
     }
   });
+
+  // Seed default organizer admin account if none exists
+  const adminCount = db.prepare('SELECT COUNT(*) as count FROM admin_users').get() as any;
+  if (!adminCount || Number(adminCount.count) === 0) {
+    const salt = crypto.randomBytes(16).toString('hex');
+    const passwordHash = hashPassword('admin1234', salt);
+    db.prepare(`
+      INSERT INTO admin_users (username, password_hash, salt, role)
+      VALUES (?, ?, ?, 'admin')
+    `).run('admin', passwordHash, salt);
+    logAdminAudit('admin', 'ADMIN_INITIALIZED', undefined, undefined, 'Default administrator account seeded (admin / admin1234)');
+  }
 }
 
 // Get active tournament
@@ -604,8 +616,81 @@ export function createAdminUser(username: string, passwordPlain: string) {
 }
 
 export function verifyAdminCredentials(username: string, passwordPlain: string): boolean {
-  const user = db.prepare('SELECT * FROM admin_users WHERE username = ?').get(username) as any;
-  if (!user) return false;
+  const normUser = username.trim().toLowerCase();
+  const user = db.prepare('SELECT * FROM admin_users WHERE LOWER(username) = ?').get(normUser) as any;
+  if (!user) {
+    return false;
+  }
   const computed = hashPassword(passwordPlain, user.salt);
-  return crypto.timingSafeEqual(Buffer.from(computed, 'hex'), Buffer.from(user.password_hash, 'hex'));
+  try {
+    if (crypto.timingSafeEqual(Buffer.from(computed, 'hex'), Buffer.from(user.password_hash, 'hex'))) {
+      return true;
+    }
+  } catch {
+    // If timingSafeEqual fails due to length mismatch
+  }
+  return false;
+}
+
+export function updateAdminCredentials(
+  currentAdminUsername: string,
+  currentPasswordPlain: string,
+  newUsername: string,
+  newPasswordPlain: string
+): { success: boolean; username: string } {
+  const trimmedNewUser = newUsername.trim();
+  if (trimmedNewUser.length < 3) {
+    throw new Error('Username must be at least 3 characters.');
+  }
+  if (newPasswordPlain.length < 6) {
+    throw new Error('Password must be at least 6 characters.');
+  }
+
+  // Find existing admin record
+  const user = db.prepare('SELECT * FROM admin_users WHERE LOWER(username) = ?').get(currentAdminUsername.trim().toLowerCase()) as any;
+  if (!user) {
+    throw new Error('Current administrator account not found.');
+  }
+
+  // Verify current password
+  const computedCurrent = hashPassword(currentPasswordPlain, user.salt);
+  let passwordMatches = false;
+  try {
+    if (crypto.timingSafeEqual(Buffer.from(computedCurrent, 'hex'), Buffer.from(user.password_hash, 'hex'))) {
+      passwordMatches = true;
+    }
+  } catch {
+    passwordMatches = false;
+  }
+
+  if (!passwordMatches) {
+    throw new Error('Current password is incorrect. Verification failed.');
+  }
+
+  // Check if new username conflicts with another account
+  if (trimmedNewUser.toLowerCase() !== user.username.toLowerCase()) {
+    const existing = db.prepare('SELECT id FROM admin_users WHERE LOWER(username) = ? AND id != ?').get(trimmedNewUser.toLowerCase(), user.id);
+    if (existing) {
+      throw new Error(`Username "${trimmedNewUser}" is already taken.`);
+    }
+  }
+
+  const newSalt = crypto.randomBytes(16).toString('hex');
+  const newPasswordHash = hashPassword(newPasswordPlain, newSalt);
+
+  db.prepare(`
+    UPDATE admin_users
+    SET username = ?, password_hash = ?, salt = ?
+    WHERE id = ?
+  `).run(trimmedNewUser, newPasswordHash, newSalt, user.id);
+
+  logAdminAudit(
+    trimmedNewUser,
+    'CREDENTIALS_UPDATED',
+    undefined,
+    undefined,
+    `Admin credentials successfully updated from "${currentAdminUsername}" to "${trimmedNewUser}"`
+  );
+
+  return { success: true, username: trimmedNewUser };
 }

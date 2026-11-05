@@ -1,0 +1,4 @@
+Registration Code,Team Code,Game Mode,Team Name,Leader Name,Leader Phone,College,Status,Payment Status,Fee (INR),Registered At,Player 1,Player 2,Player 3,Player 4,Data Source
+CA-SQ-0001,CA-SQD-0001,SQUAD,Crimson Titans,Devraj Chauhan,9876543210,IIT Delhi,Submitted,Pending,100,2026-11-03 13:54:09,DEV_APEX (1029384756),ROHAN_SNIPER (1029384757),KABIR_RUSHER (1029384758),DEV_SCOUT (1029384759),SQLite Primary Store (/data/crimson_apex.db) & WAL Journal
+CA-S-0001,CA-P-0001,SOLO,NEWBIE_ROOKIE (Solo),Level 1 Newbie Player,9876543219,National Esports Academy,Submitted,Pending,30,2026-11-03 14:42:29,NEWBIE_ROOKIE (9988776655),,,,SQLite Primary Store (/data/crimson_apex.db) & WAL Journal
+CA-S-0002,CA-P-0002,SOLO,Solo Slayer,Karan Verma,8877665544,SRM University,Submitted,Pending,30,2026-11-04 12:58:44,KARAN_FF (8877665544),,,,SQLite Primary Store (/data/crimson_apex.db) & WAL Journal
